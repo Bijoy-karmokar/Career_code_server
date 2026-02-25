@@ -29,8 +29,14 @@ async function run() {
   const jobCollctions = client.db('CareerDB').collection('jobs');
   const applicationsCollection = client.db('CareerDB').collection('applications');
 
+  // jobs related apis
   app.get('/jobs',async(req,res)=>{
-      const result = await jobCollctions.find().toArray();
+      const email = req.query.email;
+      const query ={}
+      if(email){
+         query.hr_email = email;
+      }
+      const result = await jobCollctions.find(query).toArray();
       res.send(result);
   })
 
@@ -41,6 +47,31 @@ async function run() {
     res.send(result);
   })
 
+  app.post('/jobs',async(req,res)=>{
+    const addJob = req.body;
+    const result = await jobCollctions.insertOne(addJob);
+    res.send(result);
+  })
+
+//  application related apis
+ app.get('/applications',async(req,res)=>{
+   const email = req.query.email;
+    const query ={
+      applicant: email,
+    }
+    const result = await applicationsCollection.find(query).toArray();
+    for(let application of result){
+      const jobId = application.jobId;
+      const jobQuery = {_id:new ObjectId(jobId)};
+      const job = await jobCollctions.findOne(jobQuery);
+      application.company = job.company;
+      application.title = job.title;
+      application.company_logo = job.company_logo;
+
+    }
+    res.send(result);
+ })
+ 
   app.post('/applications',async(req,res)=>{
      const application = req.body;
      const result = await applicationsCollection.insertOne(application);
