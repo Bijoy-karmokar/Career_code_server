@@ -40,6 +40,20 @@ async function run() {
       res.send(result);
   })
 
+  app.get('/jobs/applications',async(req,res)=>{
+     const email = req.query.email;
+     const query = {hr_email: email};
+     const jobs = await jobCollctions.find(query).toArray();
+     
+    //  bad way 
+    for(const job of jobs){
+     const applicationQuery = { jobId : job._id.toString()}
+     const applicationCount = await applicationsCollection.countDocuments(applicationQuery);
+     job.applicationCount = applicationCount;
+    }
+    res.send(jobs);
+  })
+
   app.get("/jobs/:id",async(req,res)=>{
     const id = req.params.id;
     const query = {_id:new ObjectId(id)}
@@ -72,11 +86,29 @@ async function run() {
     res.send(result);
  })
  
+ app.get('/applications/job/:id',async(req,res)=>{
+   const id = req.params.id;
+   const query = {jobId:id};
+   const result = await applicationsCollection.find(query).toArray();
+   res.send(result);
+ })
   app.post('/applications',async(req,res)=>{
      const application = req.body;
      const result = await applicationsCollection.insertOne(application);
      res.send(result);
   })
+
+  app.patch('/applications/:id',async(req,res)=>{
+    const id = req.params.id;
+    const filter = {_id: new ObjectId(id)};
+    const updatedDoc ={
+      $set:{
+        status: req.body.status
+      }
+    }
+    const result = await applicationsCollection.updateOne(filter,updatedDoc);
+    res.send(result);
+    })
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
